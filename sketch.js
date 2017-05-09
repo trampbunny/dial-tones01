@@ -1,9 +1,14 @@
-var upWaves = [];
+var freq;
+var waves;
 var numWaves = 25;
 var source;
 
-var currentVis;
-var visSelector = 0;
+// For waves function
+var count = 0;
+
+// For bubbles function
+var randomXY = [];
+
 function setup() {
   // Set up the visualization to fill the entire window
   createCanvas(window.innerWidth, window.innerHeight);
@@ -11,39 +16,57 @@ function setup() {
   source = new p5.AudioIn();
   source.start();
   // Comment out the line below to stop sound output through speakers
-  // source.connect();
+  //source.connect();
 
   // Create a fast Fourier transform to analyze audio signal
   fft = new p5.FFT();
   fft.setInput(source);
 
-  // Set up peak detection (beat)
-  peakDetect = new p5.PeakDetect();
-  peakDetect.onPeak(beatCapture);
+  // For bubbles function
+  for (i = 0; i < fft.analyze(source).length; i++) {
+    randomXY[i] = [random(width), random(height)];
+  }
 
-  colorMode(HSB, numWaves, 255, 255);
+  colorMode(HSB, numWaves + 1, 255, 255);
 }
 
-var steps = 0;
 function draw() {
-   waves();
-
-  fft.analyze();
-  peakDetect.update(fft);
+  freq = fft.analyze(source).slice(0,600);
+  wave = fft.waveform(source).slice(0,600);
+  visSwitcher[visSwitcherKeys[switchNumber]]();
 }
+
+var visSwitcher = {};
+visSwitcher.waves = function() { return waves(); };
+visSwitcher.bubbles = function() { return bubbles(); };
+visSwitcher.lineDance = function() { return lineDance(); };
+// visSwitcher.coder01 = function() { return coder01()(); };
+var visSwitcherKeys = Object.keys(visSwitcher);
+
+var switchNumber = 0;
+window.setInterval(function() {
+  clear();
+  switchNumber++;
+  if (switchNumber > visSwitcherKeys.length - 1) { switchNumber = 0; }
+}, 15000);
 
 // This can be optimized
 function waves() {
-  background(0, 5);
-  var wave = fft.waveform(source);
+  if (count > numWaves) { count = 0; }
+  background(0, 0.1);
   // line with waveform
   // noFill();
   strokeWeight(2);
   strokeCap(SQUARE);
   strokeJoin(ROUND);
   for (j = 0; j < numWaves; j++) {
-    stroke(numWaves - j, 255, 255);
-    fill(numWaves - j, 255, 255);
+    if (count === j) {
+      stroke(j, 255, 0);
+      fill(j, 255, 0);
+    } else {
+      stroke(numWaves - j, 255, 255);
+      fill(numWaves - j, 255, 255);
+    }
     //Top
     beginShape();
     for (i = 0; i < wave.length; i++) {
@@ -89,27 +112,115 @@ function waves() {
     }
     endShape();
   }
-}
-
-function beatCapture() {
-  console.log("capture");
-  steps++;
+  count++;
 }
 
 function bubbles() {
-  background(255, 1);
-  var freq = fft.analyze(source);
-  var wave = fft.waveform(source);
+  background(0, 0.05);
   noStroke();
-  fill(source.getLevel()/ 1 * 255, 255, 255);
+  // fill(source.getLevel()/ 1 * 255, 255, 255);
   for (i = 0; i < freq.length; i++) {
-    ellipse(i / freq.length / width + width / 2, random(height), freq[i]);
+    fill(i / freq.length * numWaves, 255, 255, 127);
+    ellipse(i / freq.length * width + random(-freq[i], freq[i]), randomXY[i][1] + random(-freq[i], freq[i]), freq[i] / 10);
   }
 }
-// window.setTimeout(function () {
-//   clear();
-//   visSelector = 1;
-// }, 10000);
+
+
+function lineDance() {
+  bass = fft.getEnergy("bass");
+  lowMid = fft.getEnergy("lowMid");
+  mid = fft.getEnergy("mid");
+  highMid = fft.getEnergy("highMid");
+  treble = fft.getEnergy("treble");
+  var ranges = [bass, lowMid, mid, highMid, treble];
+  background(0, 1);
+  noFill();
+  beginShape();
+    stroke(0, 255, 255, 127);
+    strokeWeight(bass / 255 * 5);
+    for (i = 0; i < wave.length; i++) {
+      vertex(
+        width / 2 + (width / 4 * sin(i * wave.length / (2 * PI))) + freq[i] * width,
+        height / 2 + (height / 4 * cos(i * wave.length / (2 * PI))) + freq[i] * height
+      );
+    }
+  endShape();
+  beginShape();
+    stroke(numWaves / 3, 255, 255, 127);
+    strokeWeight(mid /255 * 5);
+    for (i = 0; i < wave.length; i++) {
+      vertex(
+        width / 2 + (width / 4 * sin(i * wave.length / (2 * PI))) + freq[i] * width,
+        height / 2 + (height / 4 * cos(i * wave.length / (2 * PI))) - freq[i] * height
+      );
+    }
+  endShape();
+  beginShape();
+    stroke(numWaves * 2 / 3, 255, 255, 50);
+    strokeWeight(highMid /255 * 5);
+    for (i = 0; i < wave.length; i++) {
+      vertex(
+        width / 2 + (width / 4 * sin(i * wave.length / (2 * PI))) - freq[i] * width,
+        height / 2 + (height / 4 * cos(i * wave.length / (2 * PI))) - freq[i] * height
+      );
+    }
+    endShape();
+    beginShape();
+    stroke(numWaves -1, 255, 255, 50);
+    strokeWeight(treble / 255 * 5);
+    for (i = 0; i < wave.length; i++) {
+      vertex(
+        width / 2 + (width / 4 * sin(i * wave.length / (2 * PI))) - freq[i] * width,
+        height / 2 + (height / 4 * cos(i * wave.length / (2 * PI))) + freq[i] * height
+      );
+    }
+    endShape();
+  // }
+}
+
+function coder01() {
+  background(0, 0.1);
+  // Draw the waveform of the audio input horizontally across the middle of the screen
+  function drawWave() {
+    bass = fft.getEnergy("bass");
+    lowMid = fft.getEnergy("lowMid");
+    mid = fft.getEnergy("mid");
+    highMid = fft.getEnergy("highMid");
+    treble = fft.getEnergy("treble");
+
+    stroke(treble, bass, mid);
+    drawWave();
+
+    stroke(bass, mid, treble);
+    drawRangeCircles();
+
+    beginShape();
+    for (i = 0; i < wave.length; i++) {
+      vertex(
+        i / wave.length * width,
+        height / 2 - wave[i] / 1 * height / 2
+      );
+    }
+    endShape();
+  }
+
+  // Draw circles on the screen with width representing the average amplitude of the five defined frequency ranges
+  function drawRangeCircles() {
+    var ranges = [bass, lowMid, mid, highMid, treble];
+    for (i = 0; i < ranges.length; i++) {
+      ellipse(((i + 1) / (ranges.length + 1) * width), height / 4, ranges[i] / 255 * height / 2, mid/2, bass/2);
+      ellipse(((i + 1) / (ranges.length + 1) * width), height / 1.28, ranges[i] / 255 * height / 2, mid/2, bass/2);
+    }
+  }
+
+  function amplitudeCurve() {
+    bezier(0, 0, amp * width, height - amp * height, width - amp * width, amp * height, width, height);
+  }
+
+  function drawsomeStuff() {
+
+  }
+}
 
 // Resize the canvas when the window is resized
 window.onresize = resized;
