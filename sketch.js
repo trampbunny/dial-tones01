@@ -40,7 +40,7 @@ var visSwitcher = {};
 visSwitcher.waves = function() { return waves(); };
 visSwitcher.bubbles = function() { return bubbles(); };
 visSwitcher.lineDance = function() { return lineDance(); };
-// visSwitcher.coder01 = function() { return coder01()(); };
+// visSwitcher.coder01 = function() { return coder01(); };
 var visSwitcherKeys = Object.keys(visSwitcher);
 
 var switchNumber = 0;
@@ -178,8 +178,9 @@ function lineDance() {
   // }
 }
 
+// Created by one of the participants in the DialTones workshop
 function coder01() {
-  background(0, 0.1);
+  background(0, 0.01);
   // Draw the waveform of the audio input horizontally across the middle of the screen
   function drawWave() {
     bass = fft.getEnergy("bass");
@@ -188,13 +189,15 @@ function coder01() {
     highMid = fft.getEnergy("highMid");
     treble = fft.getEnergy("treble");
 
-    stroke(treble, bass, mid);
-    drawWave();
+    noFill();
+    stroke(255 - treble / 255, bass / 255, 255 - mid / 255);
 
-    stroke(bass, mid, treble);
+    // stroke(bass / 255, mid / 255, treble / 255);
     drawRangeCircles();
+    amplitudeCurve();
 
     beginShape();
+    strokeWeight(bass / 255 * 5);
     for (i = 0; i < wave.length; i++) {
       vertex(
         i / wave.length * width,
@@ -214,12 +217,11 @@ function coder01() {
   }
 
   function amplitudeCurve() {
+    var amp = source.getLevel();
     bezier(0, 0, amp * width, height - amp * height, width - amp * width, amp * height, width, height);
   }
 
-  function drawsomeStuff() {
-
-  }
+  drawWave();
 }
 
 // Resize the canvas when the window is resized
