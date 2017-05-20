@@ -16,7 +16,7 @@ function setup() {
   source = new p5.AudioIn();
   source.start();
   // Comment out the line below to stop sound output through speakers
-  //source.connect();
+  source.connect();
 
   // Create a fast Fourier transform to analyze audio signal
   fft = new p5.FFT();
