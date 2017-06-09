@@ -48,7 +48,7 @@ window.setInterval(function() {
   clear();
   switchNumber++;
   if (switchNumber > visSwitcherKeys.length - 1) { switchNumber = 0; }
-}, 15000);
+}, 45000);
 
 // This can be optimized
 function waves() {
